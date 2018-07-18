@@ -90,9 +90,8 @@ if __name__ == '__main__':
     with slim.arg_scope(mobilenet_v2_new.mobilenet_v2_arg_scope()):
         net, endpoints = mobilenet_v2_new.mobilenet_v2(images, num_classes=None, is_training=True, dropout_keep_prob=0.5)
     with tf.variable_scope('Logits'):
-        # net_s = slim.conv2d(net_s, 512, [4, 4], padding='VALID', scope='conv_last')
         net = tf.squeeze(net, axis=[1,2])
-        # net_student = slim.dropout(net_student, keep_prob=0.4, scope='dropout_last')
+        # net_s = slim.dropout(net_s, keep_prob=0.5, scope='dropout_last')
         net = slim.fully_connected(net, num_outputs=args.dim_eb, activation_fn=None, scope='fc_last')
     with slim.arg_scope(mobilenet_v2_new.mobilenet_v2_arg_scope()):
         net_test, _ = mobilenet_v2_new.mobilenet_v2(images, num_classes=None, is_training=False, dropout_keep_prob=1.0, reuse = True, scope='MobilenetV2')
@@ -246,10 +245,13 @@ if __name__ == '__main__':
                     #          input_placeholder=images)
                     print('test accuracy is: ', str(results[0]))
                     total_accuracy[str(count)] = results[0]
-                    log_file.write('########'*10+'\n')
-                    log_file.write(','.join(list(total_accuracy.keys())) + '\n')
-                    log_file.write(','.join([str(val) for val in list(total_accuracy.values())])+'\n')
+                    write_line = str(count) + ',' + str(results_s[0]) + '\n'
+                    log_file.write(write_line)
                     log_file.flush()
+#                     log_file.write('########'*10+'\n')
+#                     log_file.write(','.join(list(total_accuracy.keys())) + '\n')
+#                     log_file.write(','.join([str(val) for val in list(total_accuracy.values())])+'\n')
+#                     log_file.flush()
                     if max(results) > 0.996:
                         print('best accuracy is %.5f' % max(results))
                         filename = 'InsightFace_iter_best_{:d}'.format(count) + '.ckpt'
