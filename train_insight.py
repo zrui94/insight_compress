@@ -91,9 +91,6 @@ if __name__ == '__main__':
     
         logit_t = arcface_loss(embedding=embedding_tensor_t, labels=labels_t, var_scope='arcface_loss', w_init=w_init_method, out_num=args.num_output)
         t_tau = tf.scalar_mul(1.0/args.tau, logit_t)
-        # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-        # print(tf.shape(t_tau))
-        # print(t_tau)
         pred_t = tf.nn.softmax(logit_t)
         acc_t = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(pred_t, axis=1), labels_t), dtype=tf.float32))
 
@@ -124,9 +121,8 @@ if __name__ == '__main__':
         with slim.arg_scope(mobilenet_v2_new.mobilenet_v2_arg_scope()):
             net_s, endpoints = mobilenet_v2_new.mobilenet_v2(images_s, num_classes=None, is_training=True, dropout_keep_prob=0.5)
         with tf.variable_scope('Logits'):
-            # net_s = slim.conv2d(net_s, 512, [4, 4], padding='VALID', scope='conv_last')
             net_s = tf.squeeze(net_s, axis=[1,2])
-            # net_student = slim.dropout(net_student, keep_prob=0.4, scope='dropout_last')
+            # net_s = slim.dropout(net_s, keep_prob=0.5, scope='dropout_last')
             net_s = slim.fully_connected(net_s, num_outputs=args.dim_eb, activation_fn=None, scope='fc_last')
         with slim.arg_scope(mobilenet_v2_new.mobilenet_v2_arg_scope()):
             net_test_s, _ = mobilenet_v2_new.mobilenet_v2(images_s, num_classes=None, is_training=False, dropout_keep_prob=1.0, reuse = True, scope='MobilenetV2')
@@ -159,10 +155,6 @@ if __name__ == '__main__':
         lr_steps = [p*val for val in args.lr_steps]
         print(lr_steps)
         lr = tf.train.piecewise_constant(global_step, boundaries=lr_steps, values=[0.001, 0.0005, 0.0003, 0.0001], name='lr_schedule')
-
-    # tl.layers.set_name_reuse(True)
-    # test_net = get_resnet(images, args.net_depth, type='ir', w_init=w_init_method, trainable=False, reuse=True, keep_rate=dropout_rate)
-    # embedding_tensor = test_net.outputs
 
         opt = tf.train.MomentumOptimizer(learning_rate=lr, momentum=args.momentum)
         grads = opt.compute_gradients(total_loss)
@@ -273,10 +265,13 @@ if __name__ == '__main__':
                     print('test accuracy of student model is: ', str(results_s[0]))
 
                     total_accuracy[str(count)] = results_s[0]
-                    log_file.write('########'*10+'\n')
-                    log_file.write(','.join(list(total_accuracy.keys())) + '\n')
-                    log_file.write(','.join([str(val) for val in list(total_accuracy.values())])+'\n')
+                    write_line = str(count) + ',' + str(results_s[0]) + '\n'
+                    log_file.write(write_line)
                     log_file.flush()
+#                     log_file.write('########'*10+'\n')
+#                     log_file.write(','.join(list(total_accuracy.keys())) + '\n')
+#                     log_file.write(','.join([str(val) for val in list(total_accuracy.values())])+'\n')
+#                     log_file.flush()
                     if max(results_s) > 0.996:
                         print('best accuracy is %.5f' % max(results_s))
                         filename = 'MobileDistRes_iter_best_{:d}'.format(count) + '.ckpt'
